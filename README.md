@@ -7,7 +7,7 @@ This is a case study from [Google Data Analytics Certificate](https://grow.googl
 This repository will break down into different section according to the step of data analysis process:
 
 1. [Ask](/Ask.md)
-2. Prepare
+2. [Prepare](/Prepare.md)
 3. Process
 4. Analyse
 5. Share
