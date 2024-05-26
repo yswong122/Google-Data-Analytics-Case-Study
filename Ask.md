@@ -12,4 +12,4 @@ Identify trends in smart device usage in the market to give suggestion to market
 
 ## Task Statement
 
-By gathering and cleaning user data from non-Bellabeat smart devices within 5 years using R, data analysis will be done to indentify trends in smart device usage. This is to give suggestion to marketing strategy of Bellabeat product to Urška Sršen, Sando Mur and the Bellabeat marketing analytics team.
+By gathering and cleaning user data from non-Bellabeat smart devices within 10 years using R, data analysis will be done to indentify trends in smart device usage. This is to give suggestion to marketing strategy of Bellabeat product to Urška Sršen, Sando Mur and the Bellabeat marketing analytics team.
