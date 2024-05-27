@@ -33,3 +33,9 @@ In this dataset, we have two folders storing the data recorded by Fitbit trackin
 - minuteSleep: logging the state of sleep every minute when the user sleeping.
 - minuteStepsNarrow: Steps took by the user every minutes.
 - weightLogInfo: Weight related information logged into the device.
+- minuteCaloriesWide: Wide format of calories burned every minute.
+- minuteIntensitiesWide: Wide format of intensity measured every minute.
+- minuteStepsWide: Wide format of step took by the user every minute.
+
+As minuteCalorieWide, minuteIntensitiesWide and minuteStepsWise is the wide format of the narrow equivelent csv files. The three dataset will not be analysed as narrow format would be more suitable for this case study.
+
