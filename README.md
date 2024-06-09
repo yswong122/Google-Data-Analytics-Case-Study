@@ -8,7 +8,7 @@ This repository will break down into different section according to the step of 
 
 1. [Ask](/Ask.md)
 2. [Prepare](/Prepare.md)
-3. Process
+3. [Process](/Process.md)
 4. Analyse
 5. Share
 6. Act
