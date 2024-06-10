@@ -521,3 +521,42 @@ ggplot(
     text = element_text(family="roboto")) +
   scale_fill_brewer(palette="RdYlGn")
 ```
+
+
+```{r step_break_down}
+ggplot(
+  data = minute_activities,
+  aes(
+    x = hour,
+    y = reorder(day_of_week, desc(day_of_week)),
+    fill = avg_total_steps)) + 
+  geom_tile() +
+  labs(
+    title = "Average steps by hour",
+    x = "Hour in day",
+    y = "Day of week",
+    fill = "Average Total Steps") +
+  theme(
+    text = element_text(family="roboto"),
+    axis.ticks.y = element_blank()) +
+  scale_fill_distiller(palette="RdYlGn", trans="reverse")
+```
+
+We can see most of the user has inactive lifestyle judging by the average steps taken.
+User tends to be more active in weekends compare to weekdays.
+
+## Share Phase
+
+According to the above analysis, there are few points to be highlighted:
+
+- Users are equally divided between those who meet WHO recommendations and those who do not.
+- However, most of the user are consider not active according to the steps taken.
+- The activity intensity and step taken generally increase in weekend and decrease in weekday, during standard office hour. 
+
+## Act Phase
+
+Based on this case study, there are several recommendations:
+
+- The marketing team should focus on office working user and promote being active and improve their step count during working hour for better health.
+- Notification could be sent to the user to remind and encourage meeting the recommendation of weekly physical activeness.
+- An interactive walking challenge in the Bellabeat community can be introduced to inspire users to walk more each day.
