@@ -13,6 +13,11 @@ This repository will break down into different section according to the step of 
 5. Share
 6. Act
 
+The case study will be combined in [R markdown document](/How%20Can_a_Wellness_Technology_Company_Play_It_Smart.Rmd) and the result HTML is .
+
 ## Data used
 
 - [Fitbit Fitness Tracker Data](https://www.kaggle.com/datasets/arashnic/fitbit)
+- [Data Dictionary in fitbase](https://www.fitabase.com/media/1930/fitabasedatadictionary102320.pdf)
+- [WHO - Physical Activity](https://www.who.int/news-room/fact-sheets/detail/physical-activity)
+- [HeathLine - How many steps a day](https://www.healthline.com/health/how-many-steps-a-day#how-many-steps-per-day)

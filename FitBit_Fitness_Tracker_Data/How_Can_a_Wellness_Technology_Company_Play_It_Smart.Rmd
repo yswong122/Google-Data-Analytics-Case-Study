@@ -1,0 +1,523 @@
+---
+title: "How Can a Wellness Technology Company Play It Smart?"
+author: "Ashley"
+date: "2024-06-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+This is a case study from [Google Data Analytics Certificate](https://grow.google/certificates/en_uk/certificates/data-analytics).
+
+This repository will break down into different section according to the step of data analysis process:
+
+1. Ask
+2. Prepare
+3. Process
+4. Analyse
+5. Share
+6. Act
+
+Process, Analyse, Share and Act will be focused in this document.
+
+## Process Stage
+
+### Load libraries
+
+In this case study, the following libraries will be used:
+
+- `readr`
+- `tidyverse`
+- `skimr`
+- `snakecase`
+- `showtext`
+
+```{r load_libraries}
+
+# Loading packages
+
+library(readr)
+library(tidyverse)
+library(skimr)
+library(snakecase)
+library(showtext)
+
+# Adding Roboto Font from Google
+
+font_add_google("Roboto", family = "roboto")
+showtext_auto()
+
+```
+
+### Import data
+
+The data have been saved into 2 different directories with 2 different time frame. Csv file that are interested from directories will be imported into R with `_1` and `_2` suffix for merging.
+
+```{r import_data}
+
+# Get directories of file from different time frames
+first_dir = (
+  "./mturkfitbit_export_3.12.16-4.11.16/Fitabase Data 3.12.16-4.11.16/")
+second_dir = (
+  "./mturkfitbit_export_4.12.16-5.12.16/Fitabase Data 4.12.16-5.12.16/")
+
+# Limit csv file with interested data loaded
+
+csv_interested = c(
+  "dailyActivity_merged",
+  "heartrate_seconds_merged",
+  "minuteCaloriesNarrow_merged",
+  "minuteIntensitiesNarrow_merged",
+  "minuteMETsNarrow_merged",
+  "minuteSleep_merged",
+  "minuteStepsNarrow_merged",
+  "weightLogInfo_merged"
+)
+
+# Import data from two directories and rename data frames
+
+for (i in first_dir) {
+  for (csv_name in csv_interested) {
+    tmp <- readr::read_csv(file = stringr::str_c(i, csv_name,".csv"))
+    obj_name <- stringr::str_c(
+      stringr::str_replace(
+        csv_name, "_merged", "")
+      ,"_1"
+    )
+    base::assign(obj_name, tmp)
+  }
+}
+
+for (i in second_dir) {
+  for (csv_name in csv_interested) {
+    tmp <- readr::read_csv(file = stringr::str_c(i, csv_name,".csv"))
+    obj_name <- stringr::str_c(
+      stringr::str_replace(
+        csv_name, "_merged", "")
+      ,"_2"
+    )
+    base::assign(obj_name, tmp)
+  }
+}
+```
+
+### Merge data
+
+Merging data from 2 different time frames into a data frame for ease of later steps.
+
+```{r merge_data}
+daily_activity <- base::rbind(dailyActivity_1,
+                              dailyActivity_2)
+heartrate_seconds <- base::rbind(heartrate_seconds_1,
+                                 heartrate_seconds_2)
+minute_calories <- base::rbind(minuteCaloriesNarrow_1, 
+                               minuteCaloriesNarrow_2)
+minute_intensities <- base::rbind(minuteIntensitiesNarrow_1,
+                                  minuteIntensitiesNarrow_2)
+minute_METs <- base::rbind(minuteMETsNarrow_1, 
+                           minuteMETsNarrow_2)
+minute_sleep <- base::rbind(minuteSleep_1, 
+                            minuteSleep_2)
+minute_steps <- base::rbind(minuteStepsNarrow_1, 
+                            minuteStepsNarrow_2)
+weight_log_info <- base::rbind(weightLogInfo_1, 
+                               weightLogInfo_2)
+
+# Checking dimensions of the merged data frame
+nrow(daily_activity)
+nrow(dailyActivity_1) + nrow(dailyActivity_2)
+```
+
+The dimension of the merged data frame is the combination of the 2 original data frames.
+
+
+### Transform and Clean Date and Date Time column
+
+In the original data set, the column name 'date' and 'time' are used interchangeably and other column name like 'ActivityDate' are used. 'date' and 'date_time' will be used in the data frame for consistency. 
+
+Date and date_time column are mutate to be treated as date and datetime column.
+
+```{r date_and_date_time}
+daily_activity <- daily_activity %>%
+  rename(date = ActivityDate) %>%
+  mutate(date = as_date(date, format = "%m/%d/%Y"))
+
+heartrate_seconds <- heartrate_seconds %>%
+  rename(date_time = Time) %>%
+  mutate(date_time = as_datetime(date_time, format = "%m/%d/%Y %I:%M:%S %p"))
+
+minute_calories <- minute_calories %>%
+  rename(date_time = ActivityMinute) %>% 
+  mutate(date_time = as_datetime(date_time, format = "%m/%d/%Y %I:%M:%S %p")
+  )
+
+minute_intensities <- minute_intensities %>%
+  rename(date_time = ActivityMinute) %>%
+  mutate(date_time = as_datetime(date_time, format = "%m/%d/%Y %I:%M:%S %p")
+  )
+
+minute_METs <- minute_METs %>%
+  rename(date_time = ActivityMinute) %>%
+  mutate(date_time = as_datetime(date_time, format = "%m/%d/%Y %I:%M:%S %p")
+  )
+
+minute_sleep <- minute_sleep %>%
+  rename(date_time = date) %>%
+  mutate(date_time = as_datetime(date_time, format = "%m/%d/%Y %I:%M:%S %p")
+  )
+
+minute_steps <- minute_steps %>%
+  rename(date_time = ActivityMinute) %>%
+  mutate(date_time = as_datetime(date_time, format = "%m/%d/%Y %I:%M:%S %p")
+  )
+
+weight_log_info <- weight_log_info %>%
+  rename(date_time = Date) %>%
+  mutate(date_time = as_datetime(date_time, format = "%m/%d/%Y %I:%M:%S %p")
+  )
+```
+
+
+### Summarize heart rate seconds to minutes
+
+As heartrate_seconds updates every 5 seconds, the data will be summarised in order to align with the minute data.
+
+```{r heartrate}
+minute_avg_heartrate <- heartrate_seconds %>%
+  mutate(date_time=update(date_time, second = 0)) %>%
+  group_by(Id, date_time) %>%
+  summarize(average_heartrate = mean(Value),.groups = "drop")
+
+head(minute_avg_heartrate)
+```
+
+### Remove duplicates
+
+```{r remove_duplicates}
+
+# Before removing duplicates
+print("Number of Rows Before Removing Duplicates")
+print(str_c("daily_activity", nrow(daily_activity)))
+print(str_c("minute_calories", nrow(minute_calories)))
+print(str_c("minute_intensities", nrow(minute_intensities)))
+print(str_c("minute_METs", nrow(minute_METs)))
+print(str_c("minute_sleep", nrow(minute_sleep)))
+print(str_c("minute_steps", nrow(minute_steps)))
+print(str_c("weight_log_info", nrow(weight_log_info)))
+
+# Remove duplicates
+
+daily_activity <- distinct(daily_activity)
+minute_avg_heartrate <- distinct(minute_avg_heartrate)
+minute_calories <- distinct(minute_calories)
+minute_intensities <- distinct(minute_intensities)
+minute_METs <- distinct(minute_METs)
+minute_sleep <- distinct(minute_sleep)
+minute_steps <- distinct(minute_steps)
+weight_log_info <- distinct(weight_log_info)
+
+# After removing duplicates
+print("Number of Rows After Removing Duplicates")
+print(str_c("daily_activity", nrow(daily_activity)))
+print(str_c("minute_calories", nrow(minute_calories)))
+print(str_c("minute_intensities", nrow(minute_intensities)))
+print(str_c("minute_METs", nrow(minute_METs)))
+print(str_c("minute_sleep", nrow(minute_sleep)))
+print(str_c("minute_steps", nrow(minute_steps)))
+print(str_c("weight_log_info", nrow(weight_log_info)))
+```
+
+### Join minute data
+
+Joining data in minutes to a single data frame, minute_activity, for ease of further transformation.
+
+```{r join_minute_data}
+minute_activity <- minute_calories %>%
+  full_join(minute_intensities, by = c("Id", "date_time")) %>%
+  full_join(minute_METs, by = c("Id", "date_time")) %>%
+  full_join(minute_steps, by = c("Id", "date_time")) %>%
+  full_join(minute_avg_heartrate, by = c("Id", "date_time"))
+head(minute_activity)
+```
+
+### Investigate empty value
+
+```{r empty_value}
+sum(is.na(daily_activity))
+sum(is.na(minute_activity))
+sum(is.na(minute_sleep))
+sum(is.na(weight_log_info))
+
+# Check empty value
+rows_with_na <- apply(weight_log_info, 1, function(x) any(is.na(x)))
+weight_log_info_with_na <- weight_log_info[rows_with_na, ]
+weight_log_info_with_na 
+```
+
+As above, we can see the NA value comes from Fat column in weight_info dataframe.
+
+
+### Convert Column Names
+
+Column names are converted from Camel case to snake case for concise formatting. 
+
+``` {r convert_column_names}
+print("Before Converting")
+colnames(daily_activity)
+colnames(minute_activity)
+colnames(weight_log_info)
+
+names(daily_activity) <- to_snake_case(names(daily_activity),sep_out = "_")
+names(minute_activity) <- to_snake_case(names(minute_activity),sep_out = "_")
+names(weight_log_info) <- to_snake_case(names(weight_log_info),sep_out = "_")
+
+print("After Converting")
+colnames(daily_activity)
+colnames(minute_activity)
+colnames(weight_log_info)
+```
+
+### Categorize columns
+
+According to [Data Dictionary in fitbase](https://www.fitabase.com/media/1930/fitabasedatadictionary102320.pdf), the following column can be categorized with more clear meaning:
+
+- intensity (in MinuteIntensity)
+- value (in MinuteSleep)
+
+``` {r categorise_column}
+
+# Create label for categories
+
+intensity_labels <- c('sedentary', 'light', 'moderate', 'very active')
+sleep_labels <- c('asleep', 'restless', 'awake')
+
+minute_activity$intensity_category <- 
+  factor(minute_activity$intensity,
+         order = TRUE,
+         levels = c(0,1,2,3),
+         labels = intensity_labels
+  )
+
+sleep_labels <- c('asleep', 'restless', 'awake')
+
+head(minute_activity)
+
+minute_sleep$value_category <- 
+  factor(minute_sleep$value,
+         order = TRUE,
+         levels = c(1,2,3),
+         labels = sleep_labels
+  )
+
+head(minute_sleep)
+```
+
+### Rename columns
+
+Rename column to make intensity level consistent between daily_activity and minute_activity.
+
+``` {r rename_columns}
+daily_activity <- daily_activity %>%
+  rename(sedentary_distance=sedentary_active_distance,
+         fairly_active_distance=moderately_active_distance,
+         lightly_active_distance=light_active_distance)
+```
+
+### Adjust METs
+
+According to the data dictionary above,all MET values exported from Fitabase are multiplied by 10. Therefore, METs value in minuteMETs will be divided by 10.
+
+``` {r adjust_mets}
+minute_activity <- mutate(minute_activity, me_ts = me_ts / 10)
+
+head(minute_activity)
+```
+
+## Analyse Phase
+
+We would like to analyse the average time users spent on activity by different intensity to see any trend.
+
+### Duration spent on activity by intensity levels
+
+The average time spent
+
+``` {r activity_durations}
+activity_durations <- daily_activity %>%
+  select(id,
+         very_active_minutes,
+         fairly_active_minutes,
+         lightly_active_minutes,
+         sedentary_minutes) %>%
+  group_by(id) %>%
+  pivot_longer(cols = ends_with("_minutes"), names_to = "intensity", values_to = "duration") %>%
+  mutate(intensity = str_replace(intensity,"_minutes","")) %>%
+  group_by(intensity) %>%
+  summarise(average_minutes = mean(duration)) %>%
+  mutate(intensity = factor(intensity,
+                            levels = c("sedentary", 
+                            "lightly_active", 
+                            "fairly_active", 
+                            "very_active")))
+
+ggplot(
+  data = activity_durations,
+  aes(
+    x = intensity,
+    y = average_minutes,
+    fill = intensity)) + 
+  geom_col() +
+  labs(
+    title = "Average Minutes Spent on Daily Activities Categorised by\
+    Intensity Levels",
+    x = "Intensity Level",
+    y = "Average Time Spent (Minutes)") +
+  theme(
+    legend.position = "none",
+    text = element_text(family="roboto")) +
+  scale_fill_brewer(palette="RdYlGn")
+```
+
+As above figure shows user spent most time being sedentary and lightly active. However, due to the fact the sleeping time will be count as sedentary activity, it cannot show a significant trend of user activity.
+
+### Activity Recommendation by WHO
+
+We can also look into [WHO recommendation of activity level](https://www.who.int/news-room/fact-sheets/detail/physical-activity) for adult to see the activity level of users.
+
+``` {r who_recommendation}
+enough_activity <- daily_activity %>%
+  select(id,
+         date,
+         very_active_minutes,
+         fairly_active_minutes,
+         lightly_active_minutes,
+         sedentary_minutes) %>%
+  mutate(year = year(date),
+         week = week(date)) %>%
+  group_by(id, year, week) %>%
+  summarise(daily_very_active_mins = sum(very_active_minutes),
+            daily_fairly_active_mins = sum(fairly_active_minutes),
+            daily_lightly_active_mins = sum(lightly_active_minutes),
+            daily_sedentary_minutes = sum(sedentary_minutes),
+            .groups="drop") %>%
+  group_by(id) %>%
+  summarise(avg_very_active_mins = mean(daily_very_active_mins),
+            avg_fairly_active_mins = mean(daily_fairly_active_mins),
+            avg_lightly_active_mins = mean(daily_lightly_active_mins),
+            avg_sedentary_minutes = mean(daily_sedentary_minutes),
+            .groups="drop") %>%
+  mutate(enough_phy_activity= avg_very_active_mins >= 75 | avg_fairly_active_mins >= 150) %>%
+  group_by(enough_phy_activity) %>%
+  summarise(user_count = n(),
+            .groups="drop")
+
+ggplot(enough_activity, aes(x=enough_phy_activity, y=user_count,fill=enough_phy_activity)) +
+  geom_col() +
+  labs(
+    title = "Number of user reaching recommended physical activity",
+    subtitle = "According to WHO",
+    x = "Having Enough Excercise",
+    y = "User Count",
+    fill = "Having Enough Excercise") +
+  theme(,
+    legend.position = "none",
+    text = element_text(family="roboto")) +
+  scale_fill_brewer(palette="RdYlGn")
+```
+
+We can see the user activeness is spread evenly between having enough and not having enough exercise per week.
+
+### Intensity by hour
+
+Another data set to see the trend of user is minute_activty data frame where we can see a detailed breakdown of the user activity.
+
+``` {r intensity_by_hour}
+
+# Create summarised data frame for minute_activity
+minute_activities <- minute_activity %>%
+  mutate(hour = hour(date_time)) %>%
+  mutate(date = date(date_time)) %>% 
+  group_by(date, hour, id, intensity) %>%
+  summarise(total_steps = sum(steps),
+            total_calories = sum(calories),
+            avg_intensity = mean(intensity),
+            .groups = 'drop') %>%
+  drop_na() %>%
+  mutate(day_of_week = wday(date, label=TRUE)) %>%
+  group_by(day_of_week, hour) %>%
+  summarise(avg_total_steps = mean(total_steps),
+            avg_calories = mean(total_calories),
+            avg_intensity = mean(avg_intensity), .groups = 'drop')
+
+ggplot(
+  data = minute_activities,
+  aes(
+    x = hour,
+    y = reorder(day_of_week, desc(day_of_week)),
+    fill = avg_intensity)) + 
+  geom_tile() +
+  labs(
+    title = "Average Intensity by hour",
+    x = "Hour in day",
+    y = "Day of week",
+    fill = "Average Intensity") +
+  theme(
+    text = element_text(family="roboto"),
+    axis.ticks.y = element_blank()) +
+  scale_fill_distiller(palette="RdYlGn", trans="reverse")
+
+```
+
+We can see a detailed breakdown of user activity throughout the day.
+
+In the chart above, user tends to have most intense exercise between 1700 to 1900 in weekdays and between 1000 - 1400 in weekend.
+
+However, the average intensity throughout the chart is still between 0 to 1 which means the activity intensity generally fall between sedentary and lightly active.
+
+### Steps taken by users
+
+According to [Healthline](https://www.healthline.com/health/how-many-steps-a-day#how-many-steps-per-day), we can classify activity of user by the steps taken throughout the day.
+
+``` {r activeness_steps_taken}
+avg_daily_steps <- daily_activity %>%
+  select(id,
+         total_steps) %>%
+  group_by(id) %>%
+  summarise(average_total_steps = mean(total_steps)) %>%
+  mutate(activeness_by_steps = case_when(
+    average_total_steps < 2500 ~ "Basal",
+    average_total_steps >= 2500 & average_total_steps <= 4999 ~ "Limited",
+    average_total_steps >= 5000 & average_total_steps <= 7499 ~ "Low",
+    average_total_steps >= 7500 & average_total_steps <= 9999 ~ "Somewhat active",
+    average_total_steps >= 10000 & average_total_steps <= 12499 ~ "Active",
+    average_total_steps > 12500 ~ "Very active",
+  )) %>%
+  mutate(activeness_by_steps = factor(activeness_by_steps,
+                                      levels = c("Basal", 
+                                                 "Limited", 
+                                                 "Low", 
+                                                 "Somewhat active",
+                                                 "Active",
+                                                 "Very active"))) %>%
+  group_by(activeness_by_steps) %>%
+  summarise(counts = n(), .groups = 'drop')
+
+ggplot(
+  data = avg_daily_steps,
+  aes(
+    x = activeness_by_steps,
+    y = counts,
+    fill = activeness_by_steps)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average activeness of tracking device user",
+       subtitle = "Determined by daily steps taken",
+       x = "Activeness by Steps",
+       y = "User Count") +
+  theme(
+    legend.position = "none",
+    text = element_text(family="roboto")) +
+  scale_fill_brewer(palette="RdYlGn")
+```
