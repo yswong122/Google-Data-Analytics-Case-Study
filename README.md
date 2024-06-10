@@ -13,7 +13,7 @@ This repository will break down into different section according to the step of 
 5. Share
 6. Act
 
-The case study will be combined in [R markdown document](/How%20Can_a_Wellness_Technology_Company_Play_It_Smart.Rmd) and the result HTML is .
+The case study will be combined in [R markdown document](/FitBit_Fitness_Tracker_Data/How_Can_a_Wellness_Technology_Company_Play_It_Smart.Rmd) and the result [HTML](/FitBit_Fitness_Tracker_Data/How_Can_a_Wellness_Technology_Company_Play_It_Smart.html).
 
 ## Data used
 
